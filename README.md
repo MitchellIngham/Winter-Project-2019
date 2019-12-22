@@ -15,12 +15,19 @@ Now that that part is finished, the next part is to initialize the board. I will
 With all the data being stored in an array of integers, I made a key for what number is what data: 0 = white square, 1 = black square, 2 = white piece, 3 = black piece, 4 = white king, and 5 = black king. This means the starting array looks like this:
 
 0 2 0 2 0 2 0 2
+
 2 0 2 0 2 0 2 0
+
 0 2 0 2 0 2 0 2
+
 1 0 1 0 1 0 1 0
+
 0 1 0 1 0 1 0 1
+
 3 0 3 0 3 0 3 0
+
 0 3 0 3 0 3 0 3
+
 3 0 3 0 3 0 3 0
 
 I made an algorithm that fills this in, which it does by looping through every element. It can tell when a spot is a white square when the x + y is an even number (for example, square [3][7] is white because 3 + 7 = 10 which is even). Also, the way I organized the array is such that the first number goes across, and the second goes down, so [0][7] would be the bottom left corner.
