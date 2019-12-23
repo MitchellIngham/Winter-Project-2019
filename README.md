@@ -45,3 +45,21 @@ The gui is almost done, there is now an 8x8 grid of buttons that are displayed o
 The gui is now completed, and there is a visible board on screen. This is all I wanted to accomplish today, and tomorrow I will start on something closer to the main focus of this project. Tomorrow’s goal is to make it possible for you, the player, to legally move. For now, here is what the starting board looks like.
 
 ![Starting Board](https://imgur.com/0bmVXfS.png)
+
+##December 23, 2019, 13:00
+
+To start working towards my goal for today, the first thing I have to do is recognize when the player clicks on one of their own pieces. My plan is the selected piece has a green background, and after that is done any legal moves will be green squares. Then the player can click on the green square, and it will move the piece.
+
+##December 23, 2019, 13:30
+
+Now the game lets you select a piece, with that piece changing if you click a different one. Now it is time to make the algorithm to find all legal moves.
+
+![Selected Piece](https://imgur.com/sbG8oLJ.png)
+
+This algorithm will take a while longer than the other parts, because of how many things it has to find. For now I will start with it only finding the legal moves for black, so that we can get to some moving pieces faster. The first moveset I’ll program is the regular black piece, which includes passive moves, moves where it takes pieces, and moves where it takes multiple pieces.
+
+##December 23, 2019, 16:30
+
+It took a while and is very math heavy, but now the black player is able to move their pieces in every legal way, except for taking multiple pieces, which is a bit complicated. This is the last thing I want to code today, and then tomorrow I can start on the AI for the white player. Here is what it looks like for now.
+
+![Able Moves](https://imgur.com/U5zhGtb.png)
