@@ -44,4 +44,4 @@ The gui is almost done, there is now an 8x8 grid of buttons that are displayed o
 
 The gui is now completed, and there is a visible board on screen. This is all I wanted to accomplish today, and tomorrow I will start on something closer to the main focus of this project. Tomorrow’s goal is to make it possible for you, the player, to legally move. For now, here is what the starting board looks like.
 
-![Starting Board](https://imgur.com/0bmVXfS)
+![Starting Board](https://imgur.com/0bmVXfS.png)
