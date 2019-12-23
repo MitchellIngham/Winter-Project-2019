@@ -32,4 +32,16 @@ With all the data being stored in an array of integers, I made a key for what nu
 
 I made an algorithm that fills this in, which it does by looping through every element. It can tell when a spot is a white square when the x + y is an even number (for example, square [3][7] is white because 3 + 7 = 10 which is even). Also, the way I organized the array is such that the first number goes across, and the second goes down, so [0][7] would be the bottom left corner.
 
+##December 22, 2019, 16:00
 
+The next part is to initialize the gui, which will be made of a similar two dimensional array of buttons, and then another function which changes the button icons to their corresponding value in the data array. 
+
+##December 22, 2019, 20:30
+
+The gui is almost done, there is now an 8x8 grid of buttons that are displayed on the screen. For now, when they are pressed, they print the location of the button in array terms, which it gets by taking the location of the button and dividing by the width of the button. This way the program will be able to tell where the player is clicking, which will be mandatory later. But now, the last thing I want to do today is make a function that updates the button icons so that it looks like a checker board and not 64 buttons. This function will be run every time a move is made, so that the board changes as the game progresses.
+
+##December 22, 2019, 21:00
+
+The gui is now completed, and there is a visible board on screen. This is all I wanted to accomplish today, and tomorrow I will start on something closer to the main focus of this project. Tomorrow’s goal is to make it possible for you, the player, to legally move. For now, here is what the starting board looks like.
+
+![Starting Board](https://imgur.com/0bmVXfS)
