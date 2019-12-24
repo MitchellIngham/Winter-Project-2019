@@ -126,6 +126,73 @@ public class Checkers {
     
     
     
+    //shows multijump moves
+    public static int[][] showmultimoves(int[][] data, int x, int y, int isking) {
+        
+        //this recursive function finds any additional jumps on a move
+        //first check top left
+        if (x > 1 && y > 1) {  //check bounds
+            
+            if ((data[x - 1][y - 1] == 2 || data[x - 1][y - 1] == 4) && data[x - 2][y - 2] == 1) {  //if there is a piece to be taken and the destination is a black square
+            
+                data[x - 2][y - 2] = 6;  //make it green
+                
+                data = showmultimoves(data, x - 2, y - 2, isking);  //check for multimoves there too
+            
+            }
+            
+        }
+        
+        //check top right
+        if (x < 6 && y > 1) {
+        
+            if ((data[x + 1][y - 1] == 2 || data[x + 1][y - 1] == 4) && data[x + 2][y - 2] == 1) {  //if there is a piece to be taken and the destination is a black square
+            
+                data[x + 2][y - 2] = 6;  //make it green
+            
+                data = showmultimoves(data, x + 2, y - 2, isking);  //check for multimoves there too
+                
+            }
+            
+        }
+        
+        //if king
+        if (isking == 1) {
+            
+            //check bottom left
+            if (x > 1 && y < 6) {
+                
+                if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 1) {  //if there is a piece to be taken and the destination is a black square
+            
+                    data[x - 2][y + 2] = 6;  //make it green
+            
+                    data = showmultimoves(data, x - 2, y + 2, isking);  //check for multimoves there too
+                    
+                }
+                
+            }
+            
+            //check bottom right
+            if (x < 6 && y < 6) {
+                
+                if ((data[x + 1][y + 1] == 2 || data[x + 1][y + 1] == 4) && data[x + 2][y + 2] == 1) {  //if there is a piece to be taken and the destination is a black square
+            
+                    data[x + 2][y + 2] = 6;  //make it green
+            
+                    data = showmultimoves(data, x + 2, y + 2, isking);  //check for multimoves there too
+                    
+                }
+                
+            }
+            
+        }
+        
+        return data;
+        
+    }
+    
+    
+    
     //finds legal all legal moves for black pieces
     public static int[][] showblackmoves(int[][] data) {
         
@@ -150,6 +217,8 @@ public class Checkers {
                         
                         data[selected[0] - 2][selected[1] - 2] = 6;  //make it a green square
                         
+                        data = showmultimoves(data, selected[0] - 2, selected[1] - 2, selected[2]);  //check for multi moves
+                        
                     }
                     
                 }
@@ -173,6 +242,8 @@ public class Checkers {
                     if (data[selected[0] + 2][selected[1] - 2] == 1) {  //if diagonally up right two is a black square
                         
                         data[selected[0] + 2][selected[1] - 2] = 6;  //make it a green square
+                        
+                        data = showmultimoves(data, selected[0] + 2, selected[1] - 2, selected[2]);  //check for multi moves
                         
                     }
                     
@@ -201,6 +272,8 @@ public class Checkers {
                             
                             data[selected[0] - 2][selected[1] + 2] = 6;  //make it green
                             
+                            data = showmultimoves(data, selected[0] - 2, selected[1] + 2, 1);  //check for multi moves
+                            
                         }
                         
                     }
@@ -224,6 +297,8 @@ public class Checkers {
                         if (data[selected[0] + 2][selected[1] + 2] == 1) {  //if diagonally down right two is a black square
                             
                             data[selected[0] + 2][selected[1] + 2] = 6;  //make it green
+                            
+                            data = showmultimoves(data, selected[0] + 2, selected[1] + 2, 1);  //check for multi moves
                             
                         }
                         
@@ -285,8 +360,8 @@ public class Checkers {
                 //then return the board to normal
                 data = deselectpieces(data);
                 
-            }  //we know that it takes one piece when both x's and y's subtracted are both -2 or 2
-            else if ((xpos - selected[0] == -2 || xpos - selected[0] == 2) && (ypos - selected[1] == -2 || ypos - selected[1] == 2)) {
+            }  //we know that it takes one piece when both x's and y's subtracted are both -2 or 2 and the one in between(which we can find by taking the average of both x's and y's) is an enemy piece
+            else if ((xpos - selected[0] == -2 || xpos - selected[0] == 2) && (ypos - selected[1] == -2 || ypos - selected[1] == 2) && (data[(xpos + selected[0]) / 2][(ypos + selected[1]) / 2] == 2 || data[(xpos + selected[0]) / 2][(ypos + selected[1]) / 2] == 4)) {
                 
                 //first we do the same thing as passive moves
                 data[selected[0]][selected[1]] = 1;
@@ -304,6 +379,18 @@ public class Checkers {
                 data = deselectpieces(data);
                 
             }
+            else {  //if not a passive or single capture move, it is a multi move
+                
+                //first change the pressed square to 9 so the algorithm knows it is the destination
+                data[xpos][ypos] = 9;
+                
+                //then call the algorithm to move the piece
+                data = domultimove(data, selected[0], selected[1]);
+                
+                //then return the board to normal
+                data = deselectpieces(data);
+                
+            }
             
             //check if the black player has made a king by moving to the end of the board
             data = checkblackking(data);
@@ -312,6 +399,371 @@ public class Checkers {
             updategame(data, buttons);
             
         }
+        
+    }
+    
+    
+    
+    //does multi moves
+    public static int[][] domultimove(int[][] data, int x, int y) {
+        
+        //this will loop as long as there are moves to be done
+        boolean finished = false;
+        while (finished == false) {
+            
+            //first set up a boolean so that only one move is made each loop
+            boolean movemade = false;
+            
+            //next make the exit condition, which is when the final move is made
+            //there is only one destination, so we don't have to check movemade yet
+            //first check top left
+            if (x > 1 && y > 1) {  //if in bounds to take a piece
+                
+                if ((data[x - 1][y - 1] == 2 || data[x - 1][y - 1] == 4) && data[x - 2][y - 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                    
+                    //do the move
+                    data[x - 1][y - 1] = 1;  //capture the piece
+                    if (data[x][y] == 7) {  //move the piece
+                        data[x - 2][y - 2] = 3;
+                    }
+                    else {
+                        data[x - 2][y - 2] = 5;
+                    }
+                    data[x][y] = 1;  //get rid of moved piece
+                    
+                    //set to exit loop and stop moves
+                    movemade = true;
+                    finished = true;
+                    
+                }
+                
+            }
+            
+            //check top right
+            if (x < 6 && y > 1) {
+                
+                if ((data[x + 1][y - 1] == 2 || data[x + 1][y - 1] == 4) && data[x + 2][y - 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                    
+                    //do the move
+                    data[x + 1][y - 1] = 1;  //capture the piece
+                    if (data[x][y] == 7) {  //move the piece
+                        data[x + 2][y - 2] = 3;
+                    }
+                    else {
+                        data[x + 2][y - 2] = 5;
+                    }
+                    data[x][y] = 1;  //get rid of moved piece
+                    
+                    //set to exit loop and stop moves
+                    movemade = true;
+                    finished = true;
+                    
+                }
+                
+            }
+            
+            //check bottom left
+            if (x > 1 && y < 6) {
+                
+                if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                    
+                    //do the move
+                    data[x - 1][y + 1] = 1;  //capture the piece
+                    if (data[x][y] == 7) {  //move the piece
+                        data[x - 2][y + 2] = 3;
+                    }
+                    else {
+                        data[x - 2][y + 2] = 5;
+                    }
+                    data[x][y] = 1;  //get rid of moved piece
+                    
+                    //set to exit loop and stop moves
+                    movemade = true;
+                    finished = true;
+                    
+                }
+                
+            }
+            
+            //check bottom right
+            if (x < 6 && y < 6) {
+                
+                if ((data[x + 1][y + 1] == 2 || data[x + 1][y + 1] == 4) && data[x + 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                    
+                    //do the move
+                    data[x + 1][y + 1] = 1;  //capture the piece
+                    if (data[x][y] == 7) {  //move the piece
+                        data[x + 2][y + 2] = 3;
+                    }
+                    else {
+                        data[x + 2][y + 2] = 5;
+                    }
+                    data[x][y] = 1;  //get rid of moved piece
+                    
+                    //set to exit loop and stop moves
+                    movemade = true;
+                    finished = true;
+                    
+                }
+                
+            }
+            
+            //next is to make moves in steps
+            //it checks every direction, and if can result in the destination, it makes the move
+            //it keeps doing these moves until the destination is one move away, and it triggers the exit condition
+            //we have to check movemade as well as bounds for these ones
+            //first check top left
+            if (x > 1 && y > 1 && movemade == false) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x - 1][y - 1] == 2 || data[x - 1][y - 1] == 4) && data[x - 2][y - 2] == 6) {
+                    
+                    //check if it can result in getting to the destination
+                    if (checknextjump(data, x - 2, y - 2) == true) {
+                        
+                        //do jump
+                        data[x - 1][y - 1] = 1;  //capture piece
+                        data[x - 2][y - 2] = data[x][y];  //move the piece, don't need to change it from selected because more moves need to be made
+                        data[x][y] = 1;  //get rid of moved piece
+                        
+                        //change the x and y for other moves
+                        x -= 2;
+                        y -= 2;
+                        
+                        //don't do any more moves
+                        movemade = true;
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            //check top right
+            if (x < 6 && y > 1 && movemade == false) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x + 1][y - 1] == 2 || data[x + 1][y - 1] == 4) && data[x + 2][y - 2] == 6) {
+                    
+                    //check if it can result in getting to the destination
+                    if (checknextjump(data, x + 2, y - 2) == true) {
+                        
+                        //do jump
+                        data[x + 1][y - 1] = 1;  //capture piece
+                        data[x + 2][y - 2] = data[x][y];  //move the piece, don't need to change it from selected because more moves need to be made
+                        data[x][y] = 1;  //get rid of moved piece
+                        
+                        //change the x and y for other moves
+                        x += 2;
+                        y -= 2;
+                        
+                        //don't do any more moves
+                        movemade = true;
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            //check bottom left
+            if (x > 1 && y < 6 && movemade == false) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 6) {
+                    
+                    //check if it can result in getting to the destination
+                    if (checknextjump(data, x - 2, y + 2) == true) {
+                        
+                        //do jump
+                        data[x - 1][y + 1] = 1;  //capture piece
+                        data[x - 2][y + 2] = data[x][y];  //move the piece, don't need to change it from selected because more moves need to be made
+                        data[x][y] = 1;  //get rid of moved piece
+                        
+                        //change the x and y for other moves
+                        x -= 2;
+                        y += 2;
+                        
+                        //don't do any more moves
+                        movemade = true;
+                        
+                    }
+                    
+                }
+                
+            }
+            
+            //check bottom right
+            if (x < 6 && y < 6 && movemade == false) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x + 1][y + 1] == 2 || data[x + 1][y + 1] == 4) && data[x + 2][y + 2] == 6) {
+                    
+                    //check if it can result in getting to the destination
+                    if (checknextjump(data, x + 2, y + 2) == true) {
+                        
+                        //do jump
+                        data[x + 1][y + 1] = 1;  //capture piece
+                        data[x + 2][y + 2] = data[x][y];  //move the piece, don't need to change it from selected because more moves need to be made
+                        data[x][y] = 1;  //get rid of moved piece
+                        
+                        //change the x and y for other moves
+                        x += 2;
+                        y += 2;
+                        
+                        //don't need to set movemade as this is the last move in the loop
+                        
+                    }
+                    
+                }
+                
+            }
+            
+        }  
+        
+        return data;
+        
+    }
+    
+    
+    
+    //a recursive function that finds if a move is a step towards the destination of a multimove
+    public static boolean checknextjump(int[][] data, int x, int y) {
+        
+        //will return false unless if it finds the destination
+        //if there are no jumps, for example on a path that leads to a dead end, it will return false by default
+        boolean founddest = false;
+        
+        //first thing to do is check if the destination is one jump away from x, y
+        //if so, return true
+        //if not, check recursively
+        //if no available jumps, return false
+        
+        //first check top left
+        if (x > 1 && y > 1) {
+            
+            if ((data[x - 1][y - 1] == 2 || data[x - 1][y - 1] == 4) && data[x - 2][y - 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                
+                founddest = true;
+                
+            }
+            
+        }
+        
+        //check top right
+        if (x < 6 && y > 1) {
+            
+            if ((data[x + 1][y - 1] == 2 || data[x + 1][y - 1] == 4) && data[x + 2][y - 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                
+                founddest = true;
+                
+            }
+            
+        }
+        
+        //check bottom left
+        if (x > 1 && y < 6) {
+            
+            if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                
+                founddest = true;
+                
+            }
+            
+        }
+        
+        //check bottom right
+        if (x < 6 && y < 6) {
+            
+            if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+                
+                founddest = true;
+                
+            }
+            
+        }
+        
+        if (founddest == false) {  //if the destination is not one step from this point
+            
+            //find any jumps, and run this function recursively on those points
+            //first check top left
+            if (x > 1 && y > 1) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x - 1][y - 1] == 2 || data[x - 1][y - 1] == 4) && data[x - 2][y - 2] == 6) {
+                    
+                    //set the current square to 10, so that the algorithm doesn't go in circles or fall back on itself, and only goes in direct lines
+                    data[x][y] = 10;
+                    
+                    //then call the function recursively
+                    founddest = checknextjump(data, x - 2, y - 2);
+                    
+                    //then return the current square to green
+                    data[x][y] = 6;
+                    
+                }
+                
+            }
+            
+            //check top right
+            if (x < 6 && y > 1) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x + 1][y - 1] == 2 || data[x + 1][y - 1] == 4) && data[x + 2][y - 2] == 6) {
+                    
+                    //set the current square to 10, so that the algorithm doesn't go in circles or fall back on itself, and only goes in direct lines
+                    data[x][y] = 10;
+                    
+                    //then call the function recursively
+                    founddest = checknextjump(data, x + 2, y - 2);
+                    
+                    //then return the current square to green
+                    data[x][y] = 6;
+                    
+                }
+            }
+            
+            //check bottom left
+            if (x > 1 && y < 6) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 6) {
+                    
+                    //set the current square to 10, so that the algorithm doesn't go in circles or fall back on itself, and only goes in direct lines
+                    data[x][y] = 10;
+                    
+                    //then call the function recursively
+                    founddest = checknextjump(data, x - 2, y + 2);
+                    
+                    //then return the current square to green
+                    data[x][y] = 6;
+                    
+                }
+                
+            }
+            
+            //check bottom right
+            if (x < 6 && y < 6) {
+                
+                //check if there is a piece to be taken and the destination is green
+                if ((data[x + 1][y + 1] == 2 || data[x + 1][y + 1] == 4) && data[x + 2][y + 2] == 6) {
+                    
+                    //set the current square to 10, so that the algorithm doesn't go in circles or fall back on itself, and only goes in direct lines
+                    data[x][y] = 10;
+                    
+                    //then call the function recursively
+                    founddest = checknextjump(data, x + 2, y + 2);
+                    
+                    //then return the current square to green
+                    data[x][y] = 6;
+                    
+                }
+                
+            }
+            
+        }
+        
+        return founddest;
         
     }
     
@@ -445,7 +897,6 @@ public class Checkers {
         * 6 = green square
         * 7 = selected black piece
         * 8 = selected black king
-        * 4-6 won't be used for a while
         */
         
         int[][] data = new int[8][8];  //makes an empty array

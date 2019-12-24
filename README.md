@@ -63,3 +63,11 @@ This algorithm will take a while longer than the other parts, because of how man
 It took a while and is very math heavy, but now the black player is able to move their pieces in every legal way, except for taking multiple pieces, which is a bit complicated. This is the last thing I want to code today, and then tomorrow I can start on the AI for the white player. Here is what it looks like for now.
 
 ![Able Moves](https://imgur.com/U5zhGtb.png)
+
+## December 23, 2019, 20:00
+
+The player is finally able to do multi jump moves. It was more complicated than all of the other moves combined, and I’ll explain why. First it has to display them when you click on a piece, which uses a recursive function that as long as it finds a place to jump to, it will search for other places to jump from that point. And then, when you click on a green square that uses a multi jump move, it uses a while loop that runs as long as the jump isn’t completed. This while loop uses another recursive function that looks at all possible moves from a move, and returns true if it is possible to end up at the destination to finish the move. The while loop checks this, and if it returns true, it moves there. After that, it checks again, so that it never goes into a dead end.
+
+Also, I have realized today that there is a rule in checkers that says whenever a player can take a piece, they must take a piece. I did not know about this rule, and coded this program in such a way that it would be very difficult to code this rule into it. Therefore, I will ignore the rule for the sake of time. Also the suspension of this rule allows for interesting games.
+
+My goal for tomorrow is to start on the white player AI, and at least have them making random moves by the end of the day. I have completed everything I wanted for today, and I will continue tomorrow.
