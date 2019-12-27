@@ -83,3 +83,27 @@ I’ve finished making the white player move, although he isn’t very smart because
 ![doublejump1](https://imgur.com/zGMKlab.png)
 
 ![doublejump2](https://imgur.com/7fL6r90.png)
+
+## December 27, 2019, 11:30
+
+Today I’ll be looking at making an algorithm that looks at every white move, and gives it a numerical rating on how good it is. After that, it picks the one with the highest score, instead of picking a random one. There are many different situations to look at to give a move a rating, but it is much simpler once you break it down into smaller parts.
+
+The first, and simplest situation is looking at where the piece will end up. When two moves are equal, I want it to pick the one that is closer to the end of the board, prioritizing making more kings over pieces at the back of the board. So this will give a move a number from 1-7, depending on how far forward the piece is moving. This of course does not apply to kings, and they will instead prioritize moves that result in being next to an enemy, giving it a rating of 5, a rating of 4 when 2 away, and a rating of 3 when 3 away.
+
+The second situation to consider is where the piece is leaving. Making a jump could let the black player take a piece that would otherwise be safe. So, if a black player can take a piece as a result of a move, it will subtract 10 from the rating. However, if the white player can take the black piece, it will add 10 to the rating, as it is a fair trade. This will work similarly for multi jump moves, as baiting the black player into taking a piece could allow for white to take multiple black pieces, or allowing black to take multiple pieces. Also, if moving the piece would save it from potentially being captured, then it will add 10 to the rating.
+
+The third situation is for passive moves. This will make sure that white does not make passive moves that will let black take a free piece. It will use the same algorithm as the last step, where it looks at a tradeoff and tells how advantageous it is for the white player. If the passive move doesn’t move next to a black piece, it doesn’t change the rating.
+
+The fourth is for taking single pieces. It again uses the same tradeoff algorithm and tells if it is a good move.
+
+The fifth, and final situation for now, is for multi jump moves. You can probably guess what algorithm it uses to tell if it is a good move or not.
+
+After all of these situations are covered, I will probably have an ok AI to play against.
+
+## December 27, 2019, 17:00
+
+It’s taken me a while, but I set up the system where it can rate each move, then pick the highest one. It took a lot longer than I expected, as there were a few vector bugs that somehow weren’t a problem when I was using them yesterday. I Also implemented the first of the situations that I listed earlier, and it’s made for an annoying AI so far. I will finish half of the second situation, where it stops pieces from moving if it will give the black player an opportunity to take a piece. All of the other situations depend on a complicated tradeoff algorithm that I plan to code tomorrow, finishing the project.
+
+## December 27, 2019, 18:00
+
+I finished half of the second situation, I’ll program the tradeoff algorithm tomorrow, which I can plug into pretty much every other situation, so as soon as it is finished, which could take a while, the whole project will come together very quickly.

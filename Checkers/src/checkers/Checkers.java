@@ -432,7 +432,7 @@ public class Checkers {
         }
         
         //then thing is to initialize the vector to store all the moves in
-        Vector[] whitemoves = new Vector[numpieces];
+        Vector<String>[] whitemoves = new Vector[numpieces];
         
         //then loop through all the pieces
         for (int x = 0; x < numpieces; x++) {
@@ -458,41 +458,62 @@ public class Checkers {
         if (movenum == 0) {
             
             //display win
-            JOptionPane.showMessageDialog(null, "You won! Exiting the game because that was a waste of time honestly", "Congrats bro", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, "You won! Congratulations, also the game is going to close now. ", "Congrats bro", JOptionPane.INFORMATION_MESSAGE);
             
             System.exit(0);
             
         }
         
-        //Then make a random number from 0 to movenum - 1
-        Random random = new Random();
-        int randommove = random.nextInt(movenum);
+        //Then make a vector to store ratings
+        Vector<Integer>[] ratings = new Vector[numpieces];
         
-        //Then count the moves again, except when the move number is the random number, it's chosen
-        int movecounter = 0, chosenpiece = 0, chosenmove = 0;
+        //initialize each vector
         for (int x = 0; x < numpieces; x++) {
             
+            ratings[x] = new Vector();
+            
+        }
+        
+        //Then loop through every move and rate it
+        for (int x = 0; x < numpieces; x++) {
+            
+            for (int y = 0;  y < whitemoves[x].size(); y++) {
+                
+                //first get the starting x and y
+                int startingx = locations[x][0], startingy = locations[x][1];
+                
+                //then get the move
+                String move = whitemoves[x].get(y);
+                
+                //then get the rating
+                ratings[x].add(ratemove(data, startingx, startingy, move));
+                
+            }
+        }
+        
+        //Then pick the move with the biggest rating
+        int maxrating = -9999999, chosenpiece = 0, chosenmove = 0;
+        for (int x = 0; x < numpieces; x++) {
             for (int y = 0; y < whitemoves[x].size(); y++) {
                 
-                //if it is the chosen move
-                if (movecounter == randommove) {
+                //a move is better than the best found one
+                if (ratings[x].get(y) > maxrating) {
                     
-                    //get the chosen move
+                    //set the chosen move to this new best move
                     chosenpiece = x;
                     chosenmove = y;
                     
+                    //set the new maximum
+                    maxrating = ratings[x].get(y);
+                    
                 }
                 
-                //go to the next move
-                movecounter++;
-                
             }
-            
         }
         
         //Finally, do the move
         int startingx = locations[chosenpiece][0], startingy = locations[chosenpiece][1];
-        String move = whitemoves[chosenpiece].get(chosenmove).toString();
+        String move = whitemoves[chosenpiece].get(chosenmove);
         
         //if not a multimove (multimoves have more than two points because there are multiple jumps)
         if (move.length() == 2) {
@@ -579,7 +600,7 @@ public class Checkers {
         
         //make a vector to store all the moves
         //each move is a string with coordinates, so a move from 1,0 to 2,1 would be 21
-        Vector moves = new Vector();
+        Vector<String> moves = new Vector();
         int isking = 0;
         if (data[xpos][ypos] == 4) {
             isking = 1;
@@ -590,7 +611,7 @@ public class Checkers {
             
             if (data[xpos - 1][ypos + 1] == 1) {  //if it's a black square
                 
-                moves.add("" + (xpos - 1) + (ypos + 1));  //add the move
+                moves.add((xpos - 1) + "" + (ypos + 1));  //add the move
                 
             }
             else if (data[xpos - 1][ypos + 1] == 3 || data[xpos - 1][ypos + 1] == 5) {  //if it's an enemy
@@ -599,7 +620,7 @@ public class Checkers {
                     
                     if (data[xpos - 2][ypos + 2] == 1) {  //if it's a black square
                         
-                        String move = "" + (xpos - 2) + (ypos + 2);
+                        String move = (xpos - 2) + "" + (ypos + 2);
                         
                         moves.add(move);  //add the move
                         
@@ -619,7 +640,7 @@ public class Checkers {
             
             if (data[xpos + 1][ypos + 1] == 1) {  //if it's a black square
                 
-                moves.add("" + (xpos + 1) + (ypos + 1));  //add the move
+                moves.add((xpos + 1) + "" + (ypos + 1));  //add the move
                 
             }
             else if (data[xpos + 1][ypos + 1] == 3 || data[xpos + 1][ypos + 1] == 5) {  //if it's an enemy
@@ -628,7 +649,7 @@ public class Checkers {
                     
                     if (data[xpos + 2][ypos + 2] == 1) {  //if it's a black square
                         
-                        String move = "" + (xpos + 2) + (ypos + 2) ;
+                        String move = (xpos + 2) + "" + (ypos + 2) ;
                         
                         moves.add(move);  //add the move
                         
@@ -651,7 +672,7 @@ public class Checkers {
                 
                 if (data[xpos - 1][ypos - 1] == 1) {  //if it's a black square
                     
-                    moves.add("" + (xpos - 1) + (ypos - 1));  //add the move
+                    moves.add((xpos - 1) + "" + (ypos - 1));  //add the move
                     
                 }
                 else if (data[xpos - 1][ypos - 1] == 3 || data[xpos - 1][ypos - 1] == 5) {  //if it's an enemy
@@ -660,7 +681,7 @@ public class Checkers {
                     
                         if (data[xpos - 2][ypos - 2] == 1) {  //if it's a black square
                         
-                            String move = "" + (xpos - 2) + (ypos - 2) ;
+                            String move = (xpos - 2) + "" + (ypos - 2) ;
                             
                             moves.add(move);  //add the move
                             
@@ -680,7 +701,7 @@ public class Checkers {
                 
                 if (data[xpos + 1][ypos - 1] == 1) {  //if it's a black square
                     
-                    moves.add("" + (xpos + 1) + (ypos - 1));  //add the move
+                    moves.add((xpos + 1) + "" + (ypos - 1));  //add the move
                     
                 }
                 else if (data[xpos + 1][ypos - 1] == 3 || data[xpos + 1][ypos - 1] == 5) {  //if it's an enemy
@@ -689,7 +710,7 @@ public class Checkers {
                     
                         if (data[xpos + 2][ypos - 2] == 1) {  //if it's a black square
                         
-                            String move = "" + (xpos + 2) + (ypos - 2) ;
+                            String move = (xpos + 2) + "" + (ypos - 2) ;
                             
                             moves.add(move);  //add the move
                             
@@ -707,6 +728,254 @@ public class Checkers {
         }
         
         return moves;
+        
+    }
+    
+    
+    
+    //rates a white move
+    public static int ratemove(int[][] data, int startingx, int startingy, String move) {
+        
+        //make a rating starting with the departure, as it doesn't change at all with different moves
+        int rating = ratedeparture(data, startingx, startingy);
+        
+        //first get what kind of move it is
+        if (move.length() == 2) {  //if it's not a multimove
+            
+            //get the ending point
+            int endingx = Character.getNumericValue(move.charAt(0)), endingy = Character.getNumericValue(move.charAt(1));
+            
+            //first do the destination rating
+            int isking = 0;
+            if (data[startingx][startingy] == 4) {  //if it's a king
+                isking = 1;
+            }
+            rating += ratedestination(data, endingx, endingy, isking);
+            
+            //if it's a passive move
+            if ((startingx - endingx == -1 || startingx - endingx == 1) && (startingy - endingy == -1 || startingy - endingy == 1)) {
+                
+                
+                
+            }
+            else {  //if it takes one piece
+                
+                
+                
+            }
+            
+        }
+        else {  //if it's a multimove
+            
+            //first get the number of jumps
+            int jumpnum = move.length() / 2;
+            
+            //then make an array of the jumps
+            int[][] jumps = new int[jumpnum][2];
+            
+            //fill the array
+            for (int x = 0; x < jumpnum; x++) {
+                
+                //enter the jumps into the array
+                jumps[x][0] = Character.getNumericValue(move.charAt(x * 2));
+                jumps[x][1] = Character.getNumericValue(move.charAt((x * 2) + 1));
+                
+            }
+            
+            //then do the destination rating
+            int isking = 0;
+            if (data[startingx][startingy] == 4) {
+                isking = 1;
+            }
+            rating += ratedestination(data, jumps[jumpnum - 1][0], jumps[jumpnum - 1][1], isking);
+            
+        }
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //rates the advantage of leaving a square, if any
+    public static int ratedeparture(int[][] data, int xpos, int ypos) {
+        
+        //make a rating
+        int rating = 0;
+        
+        //first half, if moving out of the way saves the piece
+        //check bottom left
+        if (xpos > 1 && ypos < 6) {  //if there's an enemy that can jump to this point
+            if ((data[xpos - 2][ypos + 2] == 3 || data[xpos - 2][ypos + 2] == 5) && (data[xpos - 1][ypos + 1] == 2 || data[xpos - 1][ypos + 1] == 4)) {
+                
+                //that's bad
+                rating = -10;
+                
+            }
+        }
+        
+        //then check bottom right
+        if (xpos < 6 && ypos < 6) {  //if there's an enemy that can jump to this point
+            if ((data[xpos + 2][ypos + 2] == 3 || data[xpos + 2][ypos + 2] == 5) && (data[xpos + 1][ypos + 1] == 2 || data[xpos + 1][ypos + 1] == 4)) {
+                
+                //that's bad
+                rating = -10;
+                
+            }
+        }
+        
+        //then check top left
+        if (xpos > 1 && ypos > 1) {  //if there's an enemy king that can jump to this point
+            if (data[xpos - 2][ypos - 2] == 5 && (data[xpos - 1][ypos - 1] == 2 || data[xpos - 1][ypos - 1] == 4)) {
+                
+                //that's bad
+                rating = -10;
+                
+            }
+        }
+        
+        //then check top right
+        if (xpos < 6 && ypos > 1) {  //if there's an enemy king that can jump to this point
+            if (data[xpos + 2][ypos - 2] == 5 && (data[xpos + 1][ypos - 1] == 2 || data[xpos + 1][ypos - 1] == 4)) {
+                
+                //that's bad
+                rating = -10;
+                
+            }
+        }
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //rates the destination of a piece
+    public static int ratedestination(int[][] data, int destx, int desty, int isking) {
+        
+        int rating = 0;
+        
+        //if it's not a king, it's very simple
+        if (isking == 0) {
+            
+            //the rating is equal to how far down the piece is going
+            rating = desty;
+            
+        }
+        else {  //if it is a king
+            
+            //if the destination is next to a black piece, give it a rating of 5
+            //first check top left
+            if (destx > 0 && desty > 0) {
+                if (data[destx - 1][desty - 1] == 3 || data[destx - 1][desty - 1] == 5) {
+                    
+                    rating = 5;
+                    
+                }
+                else if (rating != 5) {  //if it's not next to an enemy, look farther
+                    if (destx > 1 && desty > 1) {
+                        if (data[destx - 2][desty - 2] == 3 || data[destx - 2][desty - 2] == 5) {
+                            
+                            rating = 4;
+                            
+                        }
+                        else if (rating < 4) {  //if it's not next to an enemy, look farther
+                            if (destx > 2 && desty > 2) {
+                                if (data[destx - 3][desty - 3] == 3 || data[destx - 3][desty - 3] == 5) {
+                            
+                                    rating = 3;
+                            
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            //then check top right
+            if (destx < 7 && desty > 0) {
+                if (data[destx + 1][desty - 1] == 3 || data[destx + 1][desty - 1] == 5) {
+                    
+                    rating = 5;
+                    
+                }
+                else if (rating != 5) {  //if it's not next to an enemy, look farther
+                    if (destx < 6 && desty > 1) {
+                        if (data[destx + 2][desty - 2] == 3 || data[destx + 2][desty - 2] == 5) {
+                            
+                            rating = 4;
+                            
+                        }
+                        else if (rating < 4) {  //if it's not next to an enemy, look farther
+                            if (destx < 5 && desty > 2) {
+                                if (data[destx + 3][desty - 3] == 3 || data[destx + 3][desty - 3] == 5) {
+                            
+                                    rating = 3;
+                            
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            //then check bottom left
+            if (destx > 0 && desty < 7) {
+                if (data[destx - 1][desty + 1] == 3 || data[destx - 1][desty + 1] == 5) {
+                    
+                    rating = 5;
+                    
+                }
+                else if (rating != 5) {  //if it's not next to an enemy, look farther
+                    if (destx > 1 && desty < 6) {
+                        if (data[destx - 2][desty + 2] == 3 || data[destx - 2][desty + 2] == 5) {
+                            
+                            rating = 4;
+                            
+                        }
+                        else if (rating < 4) {  //if it's not next to an enemy, look farther
+                            if (destx > 2 && desty < 5) {
+                                if (data[destx - 3][desty + 3] == 3 || data[destx - 3][desty + 3] == 5) {
+                            
+                                    rating = 3;
+                            
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            //the check bottom right
+            if (destx < 7 && desty < 7) {
+                if (data[destx + 1][desty + 1] == 3 || data[destx + 1][desty + 1] == 5) {
+                    
+                    rating = 5;
+                    
+                }
+                else if (rating != 5) {  //if it's not next to an enemy, look farther
+                    if (destx < 6 && desty < 6) {
+                        if (data[destx + 2][desty + 2] == 3 || data[destx + 2][desty + 2] == 5) {
+                            
+                            rating = 4;
+                            
+                        }
+                        else if (rating < 4) {  //if it's not next to an enemy, look farther
+                            if (destx < 5 && desty < 5) {
+                                if (data[destx + 3][desty + 3] == 3 || data[destx + 3][desty + 3] == 5) {
+                            
+                                    rating = 3;
+                            
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+        
+        return rating;
         
     }
     
