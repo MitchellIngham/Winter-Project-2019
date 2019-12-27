@@ -71,3 +71,15 @@ The player is finally able to do multi jump moves. It was more complicated than 
 Also, I have realized today that there is a rule in checkers that says whenever a player can take a piece, they must take a piece. I did not know about this rule, and coded this program in such a way that it would be very difficult to code this rule into it. Therefore, I will ignore the rule for the sake of time. Also the suspension of this rule allows for interesting games.
 
 My goal for tomorrow is to start on the white player AI, and at least have them making random moves by the end of the day. I have completed everything I wanted for today, and I will continue tomorrow.
+
+## December 26, 2019, 12:30
+
+I decided to take a two day break for the holidays, but I am back to work now. My goal for today is to make the white player make random legal moves. For this I will have to store all the legal moves, and choose one randomly. Because there is no way to know how many moves there are before calculating them, the best way to store them is in a two dimensional vector, where it is a vector of vectors representing all the legal moves for one piece each. I can mostly use the same algorithm as the black player, except changing which direction the pieces go in and what color the enemy is. This should be a shorter day, as I have had a while to think about how to implement this over the holiday.
+
+## December 26, 2019, 18:00
+
+I’ve finished making the white player move, although he isn’t very smart because he makes random moves right now. Tomorrow I’ll make a system for an algorithm to rate each move by how good it is, and then the AI picks the best one. Here is a picture of the white player doing a double capture and making a king.
+
+![doublejump1](https://imgur.com/zGMKlab.png)
+
+![doublejump2](https://imgur.com/7fL6r90.png)

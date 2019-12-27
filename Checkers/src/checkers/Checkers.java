@@ -3,6 +3,8 @@ import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Point;
+import java.util.Vector;
+import java.util.Random;
 
 /**
  *
@@ -395,10 +397,434 @@ public class Checkers {
             //check if the black player has made a king by moving to the end of the board
             data = checkblackking(data);
             
+            //then the white player moves
+            data = dowhitemoves(data);
+            
             //after all that, update the game
             updategame(data, buttons);
             
         }
+        
+    }
+    
+    
+    
+    //dictates where the white player will move
+    public static int[][] dowhitemoves(int[][] data) {
+
+        //first loop through the board and find the number of pieces
+        int numpieces = 0;
+        int[][] locations = new int[12][2];
+        for (int x = 0; x < 8; x++) {
+            for (int y = 0; y < 8; y++) {
+                
+                //then if it's a white piece
+                if (data[y][x] == 2 || data[y][x] == 4) {
+                    
+                    //count all the pieces and store their locations
+                    locations[numpieces][0] = y;  //x and y are backwards in this for loop
+                    locations[numpieces][1] = x;  //and I'm too lazy to change it
+                    numpieces++;
+                    
+                }
+                
+            }
+        }
+        
+        //then thing is to initialize the vector to store all the moves in
+        Vector[] whitemoves = new Vector[numpieces];
+        
+        //then loop through all the pieces
+        for (int x = 0; x < numpieces; x++) {
+            
+            //get the moves for every piece
+            whitemoves[x] = getwhitemove(data, locations[x][0], locations[x][1]);
+            
+        }
+        
+        //Then count how many moves there are
+        int movenum = 0;  //in index format
+        for (int x = 0; x < numpieces; x++) {  //loop through every player
+            
+            for (int y = 0; y < whitemoves[x].size(); y++) {  //loop through every move
+                
+                movenum++;  //count it
+                
+            }
+            
+        }
+        
+        //if there are no moves, the black player wins
+        if (movenum == 0) {
+            
+            //display win
+            JOptionPane.showMessageDialog(null, "You won! Exiting the game because that was a waste of time honestly", "Congrats bro", JOptionPane.INFORMATION_MESSAGE);
+            
+            System.exit(0);
+            
+        }
+        
+        //Then make a random number from 0 to movenum - 1
+        Random random = new Random();
+        int randommove = random.nextInt(movenum);
+        
+        //Then count the moves again, except when the move number is the random number, it's chosen
+        int movecounter = 0, chosenpiece = 0, chosenmove = 0;
+        for (int x = 0; x < numpieces; x++) {
+            
+            for (int y = 0; y < whitemoves[x].size(); y++) {
+                
+                //if it is the chosen move
+                if (movecounter == randommove) {
+                    
+                    //get the chosen move
+                    chosenpiece = x;
+                    chosenmove = y;
+                    
+                }
+                
+                //go to the next move
+                movecounter++;
+                
+            }
+            
+        }
+        
+        //Finally, do the move
+        int startingx = locations[chosenpiece][0], startingy = locations[chosenpiece][1];
+        String move = whitemoves[chosenpiece].get(chosenmove).toString();
+        
+        //if not a multimove (multimoves have more than two points because there are multiple jumps)
+        if (move.length() == 2) {
+            
+            //get the destination
+            int endingx = Character.getNumericValue(move.charAt(0)), endingy = Character.getNumericValue(move.charAt(1));
+            
+            //if it is a passive move
+            if ((startingx - endingx == -1 || startingx - endingx == 1) && (startingy - endingy == -1 || startingy - endingy == 1)) {
+                
+                //do the passive move
+                data[endingx][endingy] = data[startingx][startingy];  //move the piece
+                data[startingx][startingy] = 1;  //set the starting square back to a black square
+                
+            }
+            else {  //if takes one piece
+                
+                //do the move
+                data[endingx][endingy] = data[startingx][startingy];  //move the piece
+                data[startingx][startingy] = 1;  //set the starting square back to a black square
+                data[(startingx + endingx) / 2][(startingy + endingy) / 2] = 1;  //set the captured piece to a black square
+                
+            }
+            
+        }
+        else {  //if it is a multimove
+            
+            //we know it can't be a passive move to be a multimove
+            //so all we need to do is follow the steps and take pieces along the way
+            
+            //first thing is to get the number of points
+            int jumpnum = move.length() / 2;  //each jump has an x and a y, so taking the number of coordinates and dividing by two gives us the number of jumps
+            
+            //do the jumps one by one
+            for (int x = 0; x < jumpnum; x++) {
+                
+                //get the destination point in readable terms
+                int endingx = Character.getNumericValue(move.charAt(x * 2)), endingy = Character.getNumericValue(move.charAt((x * 2) + 1));
+                
+                //if on the first jump, start from startingx and startingy
+                if (x == 0) {
+                    
+                    //do the jump
+                    data[endingx][endingy] = data[startingx][startingy];  //move the piece
+                    data[startingx][startingy] = 1;  //make the left square black
+                    data[(startingx + endingx) / 2][(startingy + endingy) / 2] = 1;  //delete the captured piece
+                    
+                }
+                else {  //if not on the first jump
+                    
+                    //then we have to get the last point jumped to (in other words, where the piece is right now)
+                    int lastx = Character.getNumericValue(move.charAt((x - 1) * 2)), lasty = Character.getNumericValue(move.charAt(((x - 1) * 2) + 1));
+                    
+                    //do the jump
+                    data[endingx][endingy] = data[lastx][lasty];  //move the piece
+                    data[lastx][lasty] = 1;  //make the left square black
+                    data[(lastx + endingx) / 2][(lasty + endingy) / 2] = 1;  //delete the captured piece
+                    
+                }
+                
+            }
+            
+        }
+        
+        //after the move, check if the white player made a king
+        for (int x = 0; x < 8; x++) {
+            
+            if (data[x][7] == 2) {  //if it's a white piece
+                
+                data[x][7] = 4;  //it's a king now whoooo
+                
+            }
+            
+        }
+        
+        return data;
+        
+    }
+    
+    
+    
+    //gets every move for a specific white piece
+    public static Vector getwhitemove(int[][] data, int xpos, int ypos) {
+        
+        //make a vector to store all the moves
+        //each move is a string with coordinates, so a move from 1,0 to 2,1 would be 21
+        Vector moves = new Vector();
+        int isking = 0;
+        if (data[xpos][ypos] == 4) {
+            isking = 1;
+        }
+        
+        //first check lower left moves
+        if (xpos > 0 && ypos < 7) {
+            
+            if (data[xpos - 1][ypos + 1] == 1) {  //if it's a black square
+                
+                moves.add("" + (xpos - 1) + (ypos + 1));  //add the move
+                
+            }
+            else if (data[xpos - 1][ypos + 1] == 3 || data[xpos - 1][ypos + 1] == 5) {  //if it's an enemy
+                
+                if (xpos > 1 && ypos < 6) {  //check bounds again
+                    
+                    if (data[xpos - 2][ypos + 2] == 1) {  //if it's a black square
+                        
+                        String move = "" + (xpos - 2) + (ypos + 2);
+                        
+                        moves.add(move);  //add the move
+                        
+                        //check for any multimoves
+                        moves = whitemultimoves(data, moves, xpos - 2, ypos + 2, move, 0, isking);
+                        
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        
+        //then check lower right moves
+        if (xpos < 7 && ypos < 7) {
+            
+            if (data[xpos + 1][ypos + 1] == 1) {  //if it's a black square
+                
+                moves.add("" + (xpos + 1) + (ypos + 1));  //add the move
+                
+            }
+            else if (data[xpos + 1][ypos + 1] == 3 || data[xpos + 1][ypos + 1] == 5) {  //if it's an enemy
+                
+                if (xpos < 6 && ypos < 6) {  //check bounds again
+                    
+                    if (data[xpos + 2][ypos + 2] == 1) {  //if it's a black square
+                        
+                        String move = "" + (xpos + 2) + (ypos + 2) ;
+                        
+                        moves.add(move);  //add the move
+                        
+                        //check for any multimoves
+                        moves = whitemultimoves(data, moves, xpos + 2, ypos + 2, move, 1, isking);
+                        
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        
+        //then if it's a king
+        if (data[xpos][ypos] == 4) {
+            
+            //check upper left
+            if (xpos > 0 && xpos > 0) {
+                
+                if (data[xpos - 1][ypos - 1] == 1) {  //if it's a black square
+                    
+                    moves.add("" + (xpos - 1) + (ypos - 1));  //add the move
+                    
+                }
+                else if (data[xpos - 1][ypos - 1] == 3 || data[xpos - 1][ypos - 1] == 5) {  //if it's an enemy
+                
+                    if (xpos > 1 && ypos > 1) {  //check bounds again
+                    
+                        if (data[xpos - 2][ypos - 2] == 1) {  //if it's a black square
+                        
+                            String move = "" + (xpos - 2) + (ypos - 2) ;
+                            
+                            moves.add(move);  //add the move
+                            
+                            //check for any multimoves
+                            moves = whitemultimoves(data, moves, xpos - 2, ypos - 2, move, 2, 1);
+                        
+                        }
+                    
+                    }
+                
+                }
+                
+            }
+            
+            //then check upper right
+            if (xpos < 7 && ypos > 0) {
+                
+                if (data[xpos + 1][ypos - 1] == 1) {  //if it's a black square
+                    
+                    moves.add("" + (xpos + 1) + (ypos - 1));  //add the move
+                    
+                }
+                else if (data[xpos + 1][ypos - 1] == 3 || data[xpos + 1][ypos - 1] == 5) {  //if it's an enemy
+                
+                    if (xpos < 6 && ypos > 1) {  //check bounds again
+                    
+                        if (data[xpos + 2][ypos - 2] == 1) {  //if it's a black square
+                        
+                            String move = "" + (xpos + 2) + (ypos - 2) ;
+                            
+                            moves.add(move);  //add the move
+                            
+                            //check for any multimoves
+                            moves = whitemultimoves(data, moves, xpos + 2, ypos - 2, move, 3, 1);
+                        
+                        }
+                    
+                    }
+                
+                }
+                
+            }
+            
+        }
+        
+        return moves;
+        
+    }
+    
+    
+    
+    /* calculates multimoves for the white player
+    ** There are a lot of parameters for this recursive function, so I'll explain them here
+    ** data is needed because it needs to check if a move is legal
+    ** moves is the vector of moves for one piece, and it gets filled with moves as it finds them, then returns it
+    ** x and y are the point from which it checks for more moves, which changes every time the function calls itself
+    ** move is the current list of coordinates in a multi move, this grows by two digits every jump, and gets added to moves when a finished move is found
+    ** direction is needed so that the function knows where it came from, and doesn't jump backwards on itself
+    ** isking is needed to tell if a piece can jump backwards or not
+    */
+    public static Vector whitemultimoves(int[][] data, Vector moves, int x, int y, String move, int direction, int isking) {
+        
+        //check lower left
+        if (direction != 3 && x > 1 && y < 6) {  //check bounds
+            
+            if ((data[x - 1][y + 1] == 3 || data[x - 1][y + 1] == 5) && (data[x - 2][y + 2] == 1)) {  //if there is an enemy to be taken and the destination is a black square
+                
+                //this is a legal jump, so add it to moves
+                move += (x - 2) + "" + (y + 2);  //add the coordinates to the move
+                
+                moves.add(move);  //add the move
+                
+                //Then check for more moves from this point
+                //but first we make this square temporarily a different color so it doesn't get caught in a loop
+                data[x][y] = 0;
+                
+                //check for more multi moves
+                moves = whitemultimoves(data, moves, x - 2, y + 2, move, 0, isking);
+                
+                //change the square back to black
+                data[x][y] = 1;
+                
+            }
+            
+        }
+        
+        //check lower right
+        if (direction != 2 && x < 6 && y < 6) {  //check bounds
+            
+            if ((data[x + 1][y + 1] == 3 || data[x + 1][y + 1] == 5) && (data[x + 2][y + 2] == 1)) {  //if there is an enemy to be taken and the destination is a black square
+                
+                //this is a legal jump, so add it to moves
+                move += (x + 2) + "" + (y + 2);  //add the coordinates to the move
+                
+                moves.add(move);  //add the move
+                
+                //Then check for more moves from this point
+                //but first we make this square temporarily a different color so it doesn't get caught in a loop
+                data[x][y] = 0;
+                
+                //check for more multi moves
+                moves = whitemultimoves(data, moves, x + 2, y + 2, move, 1, isking);
+                
+                //change the square back to black
+                data[x][y] = 1;
+                
+            }
+            
+        }
+        
+        //if it's a king
+        if (isking == 1) {
+            
+            //check upper left
+            if (direction != 1 && x > 1 && y > 1) {  //check bounds
+                
+                if ((data[x - 1][y - 1] == 3 || data[x - 1][y - 1] == 5) && (data[x - 2][y - 2] == 1)) {  //if there is an enemy to be taken and the destination is a black square
+                
+                    //this is a legal jump, so add it to moves
+                    move += (x - 2) + "" + (y - 2);  //add the coordinates to the move
+
+                    moves.add(move);  //add the move
+
+                    //Then check for more moves from this point
+                    //but first we make this square temporarily a different color so it doesn't get caught in a loop
+                    data[x][y] = 0;
+
+                    //check for more multi moves
+                    moves = whitemultimoves(data, moves, x - 2, y - 2, move, 2, isking);
+
+                    //change the square back to black
+                    data[x][y] = 1;
+                
+                }
+                
+            }
+            
+            //check upper right
+            if (direction != 0 && x < 6 && y > 1) {  //check bounds
+                
+                if ((data[x + 1][y - 1] == 3 || data[x + 1][y - 1] == 5) && (data[x + 2][y - 2] == 1)) {  //if there is an enemy to be taken and the destination is a black square
+                
+                    //this is a legal jump, so add it to moves
+                    move += (x + 2) + "" + (y - 2);  //add the coordinates to the move
+
+                    moves.add(move);  //add the move
+
+                    //Then check for more moves from this point
+                    //but first we make this square temporarily a different color so it doesn't get caught in a loop
+                    data[x][y] = 0;
+
+                    //check for more multi moves
+                    moves = whitemultimoves(data, moves, x + 2, y - 2, move, 3, isking);
+
+                    //change the square back to black
+                    data[x][y] = 1;
+                
+                }
+                
+            }
+            
+        }
+        
+        return moves;
         
     }
     
@@ -773,7 +1199,7 @@ public class Checkers {
     public static int[][] checkblackking(int[][] data) {
         
         //loop through every square in the top row
-        for (int x = 0; x < 7; x++) {
+        for (int x = 0; x < 8; x++) {
             
             if (data[x][0] == 3) {  //if it's a black piece
                 
