@@ -107,3 +107,11 @@ It’s taken me a while, but I set up the system where it can rate each move, then
 ## December 27, 2019, 18:00
 
 I finished half of the second situation, I’ll program the tradeoff algorithm tomorrow, which I can plug into pretty much every other situation, so as soon as it is finished, which could take a while, the whole project will come together very quickly.
+
+## December 28, 2019, 14:00
+
+Today will hopefully be the last day of this project, as 5 days has been my goal. I have to make a special algorithm that takes a white move, and checks if the black player can take a piece as a result from that move. If there is a move, then it picks the best one, and does the same thing, but from the white player’s perspective. If there isn’t a move, then it returns a rating of 0. This will effectively give a rating to see if taking a piece is beneficial or not, assuming both players make the best move. This will probably take a while, but when it is done the white player AI will be significantly improved.
+
+## December 28, 2019, 20:30
+
+That took a very long time, but it works with the second situation, without any weird bugs or glitches. There was one where it would make the black player move for them, until I realized that in Java, you need to copy arrays in a very specific way so that it is an actual new array and not just referring to the same address of memory. Anyways, now that it is finished, I just have to plug it into the other situations, and this project should be finished. I will do that later this evening however.

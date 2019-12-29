@@ -515,6 +515,17 @@ public class Checkers {
         int startingx = locations[chosenpiece][0], startingy = locations[chosenpiece][1];
         String move = whitemoves[chosenpiece].get(chosenmove);
         
+        data = dowhitemove(data, startingx, startingy, move);
+        
+        return data;
+        
+    }
+    
+    
+    
+    //does a white move
+    public static int[][] dowhitemove(int[][] data, int startingx, int startingy, String move) {
+        
         //if not a multimove (multimoves have more than two points because there are multiple jumps)
         if (move.length() == 2) {
             
@@ -737,7 +748,7 @@ public class Checkers {
     public static int ratemove(int[][] data, int startingx, int startingy, String move) {
         
         //make a rating starting with the departure, as it doesn't change at all with different moves
-        int rating = ratedeparture(data, startingx, startingy);
+        int rating = ratedeparture(data, startingx, startingy, move);
         
         //first get what kind of move it is
         if (move.length() == 2) {  //if it's not a multimove
@@ -797,13 +808,30 @@ public class Checkers {
     
     
     
+    //copies the data array
+    public static int[][] copyarray(int[][] data) {
+        
+        int[][] newdata = new int[8][8];
+        
+        for (int x = 0; x < 8; x++) {
+            
+            newdata[x] = data[x].clone();
+            
+        }
+        
+        return newdata;
+        
+    }
+    
+    
+    
     //rates the advantage of leaving a square, if any
-    public static int ratedeparture(int[][] data, int xpos, int ypos) {
+    public static int ratedeparture(int[][] data, int xpos, int ypos, String move) {
         
         //make a rating
         int rating = 0;
         
-        //first half, if moving out of the way saves the piece
+        //first half, if moving lets black take a piece
         //check bottom left
         if (xpos > 1 && ypos < 6) {  //if there's an enemy that can jump to this point
             if ((data[xpos - 2][ypos + 2] == 3 || data[xpos - 2][ypos + 2] == 5) && (data[xpos - 1][ypos + 1] == 2 || data[xpos - 1][ypos + 1] == 4)) {
@@ -842,6 +870,1608 @@ public class Checkers {
                 rating = -10;
                 
             }
+        }
+        
+        //second half, if moving saves the piece
+        //if not in a corner
+        if ((xpos > 0 && ypos < 7) && (xpos < 7 && ypos > 0)) {
+            
+            //make a temporary rating that stores the best rating when it comes to the secondhalf
+            int secondrating = 0;
+            
+            //check bottom left
+            if ((data[xpos - 1][ypos + 1] == 3 || data[xpos - 1][ypos + 1] == 5) && data[xpos + 1][ypos - 1] == 1) {
+                
+                //temporarily do the black move
+                int[][] tempdata = copyarray(data);
+                tempdata[xpos + 1][ypos - 1] = tempdata[xpos - 1][ypos + 1];
+                tempdata[xpos][ypos] = 1;
+                tempdata[xpos - 1][ypos + 1] = 1;
+                
+                //get the rating
+                int temprating = 10;  //starts at 10 because black can take the piece
+                temprating += whitetradeoff(tempdata, xpos - 1, ypos + 1, xpos + 1, ypos - 1);
+                
+                if (temprating > secondrating) {  //if it's better set it to the better one
+                    secondrating = temprating;
+                }
+                
+            }
+            
+            //check bottom right
+            if ((data[xpos + 1][ypos + 1] == 3 || data[xpos + 1][ypos + 1] == 5) && data[xpos - 1][ypos - 1] == 1) {
+                
+                //temporarily do the black move
+                int[][] tempdata = copyarray(data);
+                tempdata[xpos - 1][ypos - 1] = tempdata[xpos + 1][ypos + 1];
+                tempdata[xpos][ypos] = 1;
+                tempdata[xpos + 1][ypos + 1] = 1;
+                
+                //get the rating
+                int temprating = 10;  //starts at 10 because black can take the piece
+                temprating += whitetradeoff(tempdata, xpos + 1, ypos + 1, xpos - 1, ypos - 1);
+                
+                if (temprating > secondrating) {  //if it's better set it to the better one
+                    secondrating = temprating;
+                }
+                
+            }
+            
+            //check top left
+            if (data[xpos - 1][ypos - 1] == 5 && data[xpos + 1][ypos + 1] == 1) {
+                
+                //temporarily do the black move
+                int[][] tempdata = copyarray(data);
+                tempdata[xpos + 1][ypos + 1] = tempdata[xpos - 1][ypos - 1];
+                tempdata[xpos][ypos] = 1;
+                tempdata[xpos - 1][ypos - 1] = 1;
+                
+                //get the rating
+                int temprating = 10;  //starts at 10 because black can take the piece
+                temprating += whitetradeoff(tempdata, xpos - 1, ypos - 1, xpos + 1, ypos + 1);
+                
+                if (temprating > secondrating) {  //if it's better set it to the better one
+                    secondrating = temprating;
+                }
+                
+            }
+            
+            //check top right
+            if (data[xpos + 1][ypos - 1] == 5 && data[xpos - 1][ypos + 1] == 1) {
+                
+                //temporarily do the black move
+                int[][] tempdata = copyarray(data);
+                tempdata[xpos - 1][ypos + 1] = tempdata[xpos + 1][ypos - 1];
+                tempdata[xpos][ypos] = 1;
+                tempdata[xpos + 1][ypos - 1] = 1;
+                
+                //get the rating
+                int temprating = 10;  //starts at 10 because black can take the piece
+                temprating += whitetradeoff(tempdata, xpos + 1, ypos - 1, xpos - 1, ypos + 1);
+                
+                if (temprating > secondrating) {  //if it's better set it to the better one
+                    secondrating = temprating;
+                }
+                
+            }
+            
+            //then add the temporary rating to the total
+            rating += secondrating;
+            
+        }
+        
+        return rating;
+        
+    }
+    
+    
+    
+    /* half of the tradeoff algorithm
+    ** It is given the coordinates of a black move
+    ** It checks if a white piece can take a black piece as a result of this move
+    ** If there are no moves, it returns 0
+    ** If there are moves, it picks the best one and returns it
+    ** for every move, if it is possible, it checks the other half of the algorithm,
+    ** which is the same but for black instead of white
+    ** It also won't check for more than two jump moves, which might change later
+    */
+    public static int whitetradeoff(int[][] data, int startx, int starty, int endx, int endy) {
+        
+        int rating = 0;
+        
+        //first check the departed square
+        //check top left
+        if (startx > 1 && starty > 1) {
+            //if a white piece can jump here
+            if ((data[startx - 2][starty - 2] == 2 || data[startx - 2][starty - 2] == 4) && (data[startx - 1][starty - 1] == 3 || data[startx - 1][starty - 1] == 5)) {
+                
+                //check the other three directions to see if it can double jump
+                //check bottom left
+                if (starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if ((data[startx - 2][starty + 2] == 1) && (data[startx - 1][starty + 1] == 3 || data[startx - 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty - 2, startx - 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (startx < 6) {
+                    //if there's a spot to jump to, a piece to jump over, and it's using a white king
+                    if (data[startx + 2][starty - 2] == 1 && data[startx - 2][starty - 2] == 4 && (data[startx + 1][starty - 1] == 3 || data[startx + 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty - 2, startx + 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (startx < 6 && starty < 6) {
+                    //if there's a spot to jump to and a piece to take
+                    if (data[startx + 2][starty + 2] == 1 && (data[startx + 1][starty + 1] == 3 || data[startx + 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty - 2, startx + 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx - 2][starty - 2];
+                tempdata[startx - 1][starty - 1] = 1;
+                tempdata[startx - 2][starty - 2] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, startx - 2, starty - 2, startx, starty);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check top right
+        if (startx < 6 && starty > 1) {
+            //if a white piece can jump here
+            if ((data[startx + 2][starty - 2] == 2 || data[startx + 2][starty - 2] == 4) && (data[startx + 1][starty - 1] == 3 || data[startx + 1][starty - 1] == 5)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (startx > 1) {
+                    //if there's a spot to jump to, a piece to jump over, and it's a white king
+                    if (data[startx - 2][starty - 2] == 1 && data[startx + 2][starty - 2] == 4 && (data[startx - 1][starty - 1] == 3 || data[startx - 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty - 2, startx - 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (startx > 1 && starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if ((data[startx - 2][starty + 2] == 1) && (data[startx - 1][starty + 1] == 3 || data[startx - 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty - 2, startx - 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty + 2] == 1 && (data[startx + 1][starty + 1] == 3 || data[startx + 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty - 2, startx + 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx + 2][starty - 2];
+                tempdata[startx + 1][starty - 1] = 1;
+                tempdata[startx + 2][starty - 2] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, startx + 2, starty - 2, startx, starty);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check bottom left
+        if (startx > 1 && starty < 6) {
+            //if a white king can jump here
+            if ((data[startx - 2][starty + 2] == 4) && (data[startx - 1][starty + 1] == 3 || data[startx - 1][starty + 1] == 5)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx - 2][starty - 2] == 1 && (data[startx - 1][starty - 1] == 3 || data[startx - 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty + 2, startx - 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (startx < 6 && starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty - 2] == 1 && (data[startx + 1][starty - 1] == 3 || data[startx + 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty + 2, startx + 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (startx < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty + 2] == 1 && (data[startx + 1][starty + 1] == 3 || data[startx + 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx - 2, starty + 2, startx + 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx - 2][starty + 2];
+                tempdata[startx - 1][starty + 1] = 1;
+                tempdata[startx - 2][starty + 2] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, startx - 2, starty + 2, startx, starty);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check bottom right
+        if (startx < 6 && starty < 6) {
+            //if a white king can jump here
+            if ((data[startx + 2][starty + 2] == 4) && (data[startx + 1][starty + 1] == 3 || data[startx + 1][starty + 1] == 5)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (startx > 1 && starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx - 2][starty - 2] == 1 && (data[startx - 1][starty - 1] == 3 || data[startx - 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty + 2, startx - 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty - 2] == 1 && (data[startx + 1][starty - 1] == 3 || data[startx + 1][starty - 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty + 2, startx + 2, starty - 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (startx > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if ((data[startx - 2][starty + 2] == 1) && (data[startx - 1][starty + 1] == 3 || data[startx - 1][starty + 1] == 5)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, startx + 2, starty + 2, startx - 2, starty + 2);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx + 2][starty + 2];
+                tempdata[startx + 1][starty + 1] = 1;
+                tempdata[startx + 2][starty + 2] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, startx + 2, starty + 2, startx, starty);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //and then check the arrived square
+        //make sure it's not in the corner
+        if ((endx > 0 && endx < 7) && (endy > 0 && endy < 7)) {
+            
+            //check top left
+            //if a white piece here can jump
+            if ((data[endx - 1][endy - 1] == 2 || data[endx - 1][endy - 1] == 4) && data[endx + 1][endy + 1] == 1) {
+                
+                //check the other three directions to see if it can double jump
+                //check top right if it's a king
+                if (data[endx - 1][endy - 1] == 4 && endx + 1 < 6 && endy + 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy - 1] == 1 && (data[endx + 2][endy] == 3 || data[endx + 2][endy] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy - 1] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx + 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy - 1, endx + 3, endy - 1);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (endx + 1 > 1 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 1][endy + 3] == 1 && (data[endx][endy + 2] == 3 || data[endx][endy + 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 1][endy + 3] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy - 1, endx - 1, endy + 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (endx + 1 < 6 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy + 3] == 1 && (data[endx + 2][endy + 2] == 3 || data[endx + 2][endy + 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy + 3] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx + 2][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy - 1, endx + 3, endy + 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx + 1][endy + 1] = tempdata[endx - 1][endy - 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx - 1][endy - 1] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, endx - 1, endy - 1, endx + 1, endy + 1);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check top right
+            //if a white piece here can jump
+            if ((data[endx + 1][endy - 1] == 2 || data[endx + 1][endy - 1] == 4) && data[endx - 1][endy + 1] == 1) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left if it's a king
+                if (data[endx + 1][endy - 1] == 4 && endx - 1 > 1 && endy + 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy - 1] == 1 && (data[endx - 2][endy] == 3 || data[endx - 2][endy] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy - 1] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx - 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy - 1, endx - 3, endy - 1);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (endx - 1 > 1 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy + 3] == 1 && (data[endx - 2][endy + 2] == 3 || data[endx - 2][endy + 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy + 3] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx - 2][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy - 1, endx - 3, endy + 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (endx - 1 < 6 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 1][endy + 3] == 1 && (data[endx][endy + 2] == 3 || data[endx][endy + 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 1][endy + 3] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy - 1, endx + 1, endy + 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx - 1][endy + 1] = tempdata[endx + 1][endy - 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx + 1][endy - 1] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, endx + 1, endy - 1, endx - 1, endy + 1);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check bottom left
+            //if a white king here can jump
+            if (data[endx - 1][endy + 1] == 4 && data[endx + 1][endy - 1] == 1) {
+                
+                //check top left
+                if (endx + 1 > 1 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 1][endy - 3] == 1 && (data[endx][endy - 2] == 3 || data[endx][endy - 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 1][endy - 3] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy + 1, endx - 1, endy - 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (endx + 1 < 6 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy - 3] == 1 && (data[endx + 2][endy - 2] == 3 || data[endx + 2][endy - 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy - 3] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx + 2][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy + 1, endx + 3, endy - 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (endx + 1 < 6 && endy - 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy + 1] == 1 && (data[endx + 2][endy] == 3 || data[endx + 2][endy] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy + 1] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx + 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx - 1, endy + 1, endx + 3, endy + 1);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx + 1][endy - 1] = tempdata[endx - 1][endy + 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx - 1][endy + 1] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, endx - 1, endy + 1, endx + 1, endy - 1);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check bottom right
+            //if a white king here can jump
+            if (data[endx + 1][endy + 1] == 4 && data[endx - 1][endy - 1] == 1) {
+                
+                //check top left
+                if (endx - 1 > 1 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy - 3] == 1 && (data[endx - 2][endy - 2] == 3 || data[endx - 2][endy - 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy - 3] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx - 2][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy + 1, endx - 3, endy - 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (endx - 1 < 6 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 1][endy - 3] == 1 && (data[endx][endy - 2] == 3 || data[endx][endy - 2] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 1][endy - 3] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy + 1, endx + 1, endy - 3);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (endx - 1 > 1 && endy - 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy + 1] == 1 && (data[endx - 2][endy] == 3 || data[endx - 2][endy] == 5)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy + 1] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx - 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if black can take any pieces because of this
+                        int newrating = 20 + blacktradeoff(tempdata, endx + 1, endy + 1, endx - 3, endy + 1);
+                        
+                        //if this is a better move
+                        if (newrating > rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx - 1][endy - 1] = tempdata[endx + 1][endy + 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx + 1][endy + 1] = 1;
+                
+                //then see if black can take any pieces because of this
+                int newrating = 10 + blacktradeoff(tempdata, endx + 1, endy + 1, endx - 1, endy - 1);
+                        
+                //if this is a better move
+                if (newrating > rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+        }
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //the other half of the tradeoff algorithm
+    //white tradeoff is given a black move, black tradeoff is given a white move
+    //this is because it white tradeoff checks for white moves, and vice versa
+    public static int blacktradeoff(int[][] data, int startx, int starty, int endx, int endy) {
+        
+        int rating = 0;
+        
+        //first check the departed square
+        //check top left
+        if (startx > 1 && starty > 1) {
+            //if a black king can jump here
+            if ((data[startx - 2][starty - 2] == 5) && (data[startx - 1][starty - 1] == 2 || data[startx - 1][starty - 1] == 4)) {
+                
+                //check the other three directions to see if it can double jump
+                //check bottom left
+                if (starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if ((data[startx - 2][starty + 2] == 1) && (data[startx - 1][starty + 1] == 2 || data[startx - 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty - 2, startx - 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (startx < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty - 2] == 1 && (data[startx + 1][starty - 1] == 2 || data[startx + 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty - 2, startx + 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (startx < 6 && starty < 6) {
+                    //if there's a spot to jump to and a piece to take
+                    if (data[startx + 2][starty + 2] == 1 && (data[startx + 1][starty + 1] == 2 || data[startx + 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx - 2][starty - 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty - 2, startx + 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx - 2][starty - 2];
+                tempdata[startx - 1][starty - 1] = 1;
+                tempdata[startx - 2][starty - 2] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, startx - 2, starty - 2, startx, starty);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check top right
+        if (startx < 6 && starty > 1) {
+            //if a black king can jump here
+            if ((data[startx + 2][starty - 2] == 5) && (data[startx + 1][starty - 1] == 2 || data[startx + 1][starty - 1] == 4)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (startx > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx - 2][starty - 2] == 1 && (data[startx - 1][starty - 1] == 2 || data[startx - 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty - 2, startx - 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (startx > 1 && starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if ((data[startx - 2][starty + 2] == 1) && (data[startx - 1][starty + 1] == 2 || data[startx - 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty - 2, startx - 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (starty < 6) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty + 2] == 1 && (data[startx + 1][starty + 1] == 2 || data[startx + 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx + 2][starty - 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 2][starty - 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty - 2, startx + 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx + 2][starty - 2];
+                tempdata[startx + 1][starty - 1] = 1;
+                tempdata[startx + 2][starty - 2] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, startx + 2, starty - 2, startx, starty);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check bottom left
+        if (startx > 1 && starty < 6) {
+            //if a black piece can jump here
+            if ((data[startx - 2][starty + 2] == 3 || data[startx - 2][starty + 2] == 5) && (data[startx - 1][starty + 1] == 2 || data[startx - 1][starty + 1] == 4)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx - 2][starty - 2] == 1 && (data[startx - 1][starty - 1] == 2 || data[startx - 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty + 2, startx - 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (startx < 6 && starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty - 2] == 1 && (data[startx + 1][starty - 1] == 2 || data[startx + 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty + 2, startx + 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (startx < 6) {
+                    //if there's a spot to jump to, a piece to jump over, and it's a black king
+                    if (data[startx + 2][starty + 2] == 1 && data[startx - 2][starty + 2] == 5 && (data[startx + 1][starty + 1] == 2 || data[startx + 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty + 2] = tempdata[startx - 2][starty + 2];
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx - 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx - 2, starty + 2, startx + 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx - 2][starty + 2];
+                tempdata[startx - 1][starty + 1] = 1;
+                tempdata[startx - 2][starty + 2] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, startx - 2, starty + 2, startx, starty);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //check bottom right
+        if (startx < 6 && starty < 6) {
+            //if a black piece can jump here
+            if ((data[startx + 2][starty + 2] == 3 || data[startx + 2][starty + 2] == 5) && (data[startx + 1][starty + 1] == 2 || data[startx + 1][starty + 1] == 4)) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (startx > 1 && starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx - 2][starty - 2] == 1 && (data[startx - 1][starty - 1] == 2 || data[startx - 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty - 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx - 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty + 2, startx - 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (starty > 1) {
+                    //if there's a spot to jump to and a piece to jump over
+                    if (data[startx + 2][starty - 2] == 1 && (data[startx + 1][starty - 1] == 2 || data[startx + 1][starty - 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx + 2][starty - 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx + 1][starty - 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty + 2, startx + 2, starty - 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (startx > 1) {
+                    //if there's a spot to jump to, a piece to jump over, and it's a black king
+                    if ((data[startx - 2][starty + 2] == 1) && data[startx + 2][starty + 2] == 5 && (data[startx - 1][starty + 1] == 2 || data[startx - 1][starty + 1] == 4)) {
+                        
+                        //temporarily do the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[startx - 2][starty + 2] = tempdata[startx + 2][starty + 2];
+                        tempdata[startx - 1][starty + 1] = 1;
+                        tempdata[startx + 1][starty + 1] = 1;
+                        tempdata[startx + 2][starty + 2] = 1;
+                        
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, startx + 2, starty + 2, startx - 2, starty + 2);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //and also check the regular jump
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[startx][starty] = tempdata[startx + 2][starty + 2];
+                tempdata[startx + 1][starty + 1] = 1;
+                tempdata[startx + 2][starty + 2] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, startx + 2, starty + 2, startx, starty);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+        }
+        
+        //and then check the arrived square
+        //make sure it's not in the corner
+        if ((endx > 0 && endx < 7) && (endy > 0 && endy < 7)) {
+            
+            //check top left
+            //if a black king here can jump
+            if (data[endx - 1][endy - 1] == 5 && data[endx + 1][endy + 1] == 1) {
+                
+                //check the other three directions to see if it can double jump
+                //check top right
+                if (endx + 1 < 6 && endy + 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy - 1] == 1 && (data[endx + 2][endy] == 2 || data[endx + 2][endy] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy - 1] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx + 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy - 1, endx + 3, endy - 1);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (endx + 1 > 1 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 1][endy + 3] == 1 && (data[endx][endy + 2] == 2 || data[endx][endy + 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 1][endy + 3] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy - 1, endx - 1, endy + 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (endx + 1 < 6 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy + 3] == 1 && (data[endx + 2][endy + 2] == 2 || data[endx + 2][endy + 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy + 3] = tempdata[endx - 1][endy - 1];
+                        tempdata[endx + 2][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy - 1, endx + 3, endy + 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx + 1][endy + 1] = tempdata[endx - 1][endy - 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx - 1][endy - 1] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, endx - 1, endy - 1, endx + 1, endy + 1);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check top right
+            //if a black king here can jump
+            if (data[endx + 1][endy - 1] == 5 && data[endx - 1][endy + 1] == 1) {
+                
+                //check the other three directions to see if it can double jump
+                //check top left
+                if (endx - 1 > 1 && endy + 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy - 1] == 1 && (data[endx - 2][endy] == 2 || data[endx - 2][endy] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy - 1] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx - 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy - 1, endx - 3, endy - 1);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left
+                if (endx - 1 > 1 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy + 3] == 1 && (data[endx - 2][endy + 2] == 2 || data[endx - 2][endy + 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy + 3] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx - 2][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy - 1, endx - 3, endy + 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right
+                if (endx - 1 < 6 && endy + 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 1][endy + 3] == 1 && (data[endx][endy + 2] == 2 || data[endx][endy + 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 1][endy + 3] = tempdata[endx + 1][endy - 1];
+                        tempdata[endx][endy + 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy - 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy - 1, endx + 1, endy + 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx - 1][endy + 1] = tempdata[endx + 1][endy - 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx + 1][endy - 1] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, endx + 1, endy - 1, endx - 1, endy + 1);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check bottom left
+            //if a black piece here can jump
+            if ((data[endx - 1][endy + 1] == 3 || data[endx - 1][endy + 1] == 5) && data[endx + 1][endy - 1] == 1) {
+                
+                //check top left
+                if (endx + 1 > 1 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 1][endy - 3] == 1 && (data[endx][endy - 2] == 2 || data[endx][endy - 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 1][endy - 3] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy + 1, endx - 1, endy - 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (endx + 1 < 6 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy - 3] == 1 && (data[endx + 2][endy - 2] == 2 || data[endx + 2][endy - 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy - 3] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx + 2][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy + 1, endx + 3, endy - 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom right if it's a king
+                if (data[endx - 1][endy + 1] == 5 && endx + 1 < 6 && endy - 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 3][endy + 1] == 1 && (data[endx + 2][endy] == 2 || data[endx + 2][endy] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 3][endy + 1] = tempdata[endx - 1][endy + 1];
+                        tempdata[endx + 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx - 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx - 1, endy + 1, endx + 3, endy + 1);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx + 1][endy - 1] = tempdata[endx - 1][endy + 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx - 1][endy + 1] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, endx - 1, endy + 1, endx + 1, endy - 1);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
+            //check bottom right
+            //if a black piece here can jump
+            if ((data[endx + 1][endy + 1] == 3 || data[endx + 1][endy + 1] == 5) && data[endx - 1][endy - 1] == 1) {
+                
+                //check top left
+                if (endx - 1 > 1 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy - 3] == 1 && (data[endx - 2][endy - 2] == 2 || data[endx - 2][endy - 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy - 3] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx - 2][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy + 1, endx - 3, endy - 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check top right
+                if (endx - 1 < 6 && endy - 1 > 1) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx + 1][endy - 3] == 1 && (data[endx][endy - 2] == 2 || data[endx][endy - 2] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx + 1][endy - 3] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx][endy - 2] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy + 1, endx + 1, endy - 3);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check bottom left if it's a king
+                if (data[endx - 1][endy + 1] == 5 && endx - 1 > 1 && endy - 1 < 6) {
+                    //if there's a spot to jump and an enemy to take
+                    if (data[endx - 3][endy + 1] == 1 && (data[endx - 2][endy] == 2 || data[endx - 2][endy] == 4)) {
+                        
+                        //temporarily make the move
+                        int[][] tempdata = copyarray(data);
+                        tempdata[endx - 3][endy + 1] = tempdata[endx + 1][endy + 1];
+                        tempdata[endx - 2][endy] = 1;
+                        tempdata[endx][endy] = 1;
+                        tempdata[endx + 1][endy + 1] = 1;
+                
+                        //then see if white can take any pieces because of this
+                        int newrating = -20 + whitetradeoff(tempdata, endx + 1, endy + 1, endx - 3, endy + 1);
+                        
+                        //if this is a worse move
+                        if (newrating < rating) {
+                            rating = newrating;  //set it
+                        }
+                        
+                    }
+                }
+                
+                //check normal
+                //temporarily make the move
+                int[][] tempdata = copyarray(data);
+                tempdata[endx - 1][endy - 1] = tempdata[endx + 1][endy + 1];
+                tempdata[endx][endy] = 1;
+                tempdata[endx + 1][endy + 1] = 1;
+                
+                //then see if white can take any pieces because of this
+                int newrating = -10 + whitetradeoff(tempdata, endx + 1, endy + 1, endx - 1, endy - 1);
+                        
+                //if this is a worse move
+                if (newrating < rating) {
+                    rating = newrating;  //set it
+                }
+                
+            }
+            
         }
         
         return rating;
