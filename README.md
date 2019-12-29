@@ -115,3 +115,11 @@ Today will hopefully be the last day of this project, as 5 days has been my goal
 ## December 28, 2019, 20:30
 
 That took a very long time, but it works with the second situation, without any weird bugs or glitches. There was one where it would make the black player move for them, until I realized that in Java, you need to copy arrays in a very specific way so that it is an actual new array and not just referring to the same address of memory. Anyways, now that it is finished, I just have to plug it into the other situations, and this project should be finished. I will do that later this evening however.
+
+## December 28, 2019, 23:00
+
+I’ve finished implementing the algorithm into the white player AI. It’s far from perfect, but it’s good at decisions in the early game, when there are a lot of pieces. When the amount of pieces go down, however, it wastes a lot of time moving pieces back and forth. I could fix this with a much better white king pathfinding algorithm, but this is all I could do in 5 days. Another simple change I would do if I had more time is to make it choose a random move when there are moves with the same value, because right now it just picks the first highest score one. In the early game it’s pretty good, and it’s better than me at finding trades beneficial to it. Here’s a screenshot of an early game setup.
+
+![finished AI](https://imgur.com/rPkPt9e.png)
+
+I’m very happy without the outcome of this project, and I had a lot of fun coding it. The hardest part was definitely the algorithm I wrote today, and honestly I can’t even remember how it works, as it’s so complicated. Even though it was difficult, there’s nothing more satisfying than seeing it all work for the first time. I’m going to archive this repository now, putting this project to an end.

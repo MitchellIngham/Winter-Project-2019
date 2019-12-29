@@ -4,7 +4,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.Point;
 import java.util.Vector;
-import java.util.Random;
+
+
 
 /**
  *
@@ -13,6 +14,9 @@ import java.util.Random;
  * This is a program that lets you play against a checkers AI, made by me
  * 
  */
+
+
+
 public class Checkers {
 
     public static void main(String[] args) {
@@ -23,8 +27,6 @@ public class Checkers {
         
         makelisteners(data, buttons);  //makes an event listener for the buttons and adds them
 
-        printdata(data);
-        
     }
     
     
@@ -748,7 +750,7 @@ public class Checkers {
     public static int ratemove(int[][] data, int startingx, int startingy, String move) {
         
         //make a rating starting with the departure, as it doesn't change at all with different moves
-        int rating = ratedeparture(data, startingx, startingy, move);
+        int rating = ratedeparture(data, startingx, startingy);
         
         //first get what kind of move it is
         if (move.length() == 2) {  //if it's not a multimove
@@ -766,12 +768,14 @@ public class Checkers {
             //if it's a passive move
             if ((startingx - endingx == -1 || startingx - endingx == 1) && (startingy - endingy == -1 || startingy - endingy == 1)) {
                 
-                
+                //do the rating
+                rating += ratepassivemove(data, startingx, startingy, endingx, endingy);
                 
             }
             else {  //if it takes one piece
                 
-                
+                //do the rating
+                rating += ratesinglemove(data, startingx, startingy, endingx, endingy);
                 
             }
             
@@ -800,7 +804,88 @@ public class Checkers {
             }
             rating += ratedestination(data, jumps[jumpnum - 1][0], jumps[jumpnum - 1][1], isking);
             
+            //do the rating
+            rating += jumpnum + ratemultimove(data, startingx, startingy, jumps);
+            
         }
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //rates multi moves
+    public static int ratemultimove(int[][] data, int startx, int starty, int[][] jumps) {
+        
+        int rating = 0;
+        
+        //first temporarily do the jump
+        int[][] tempdata = copyarray(data);
+        
+        //do the first jump manually
+        tempdata[jumps[0][0]][jumps[0][1]] = tempdata[startx][starty];
+        tempdata[(jumps[0][0] + startx) / 2][(jumps[0][1] + starty) / 2] = 1;
+        tempdata[startx][starty] = 1;
+        
+        //loop through each next jump
+        for (int x = 1; x < jumps.length; x++) {
+            
+            //move the jumping piece
+            tempdata[jumps[x][0]][jumps[x][1]] = tempdata[jumps[x - 1][0]][jumps[x - 1][1]];
+            
+            //destroy the jumped piece
+            tempdata[(jumps[x][0] + jumps[x - 1][0]) / 2][(jumps[x][1] + jumps[x - 1][1]) / 2] = 1;
+            
+            //destroy the moved piece
+            tempdata[jumps[x - 1][0]][jumps[x - 1][1]] = 1;
+            
+        }
+        
+        //then check for any black moves that can take this piece
+        //we can do this by sending the move to black tradeoff, and it will tell if it is a good move
+        rating += blacktradeoff(tempdata, startx, starty, jumps[jumps.length - 1][0], jumps[jumps.length - 1][1]);
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //rates moves where the white player takes a single piece
+    public static int ratesinglemove(int[][] data, int startx, int starty, int endx, int endy) {
+        
+        int rating = 10;  //start at 10 because it's already taking a black piece, which is good
+        
+        //first temporarily make the white move
+        int[][] tempdata = copyarray(data);
+        tempdata[endx][endy] = tempdata[startx][starty];
+        tempdata[(startx + endx) / 2][(starty + endy) / 2] = 1;
+        tempdata[startx][starty] = 1;
+        
+        //then check for any black moves that can take this piece
+        //we can do this by sending the move to black tradeoff, and it will tell if it is a good move
+        rating += blacktradeoff(tempdata, startx, starty, endx, endy);
+        
+        return rating;
+        
+    }
+    
+    
+    
+    //rates white passive moves
+    public static int ratepassivemove(int[][] data, int startx, int starty, int endx, int endy) {
+        
+        int rating = 0;
+        
+        //first temporarily make the white move
+        int[][] tempdata = copyarray(data);
+        tempdata[endx][endy] = tempdata[startx][starty];
+        tempdata[startx][starty] = 1;
+        
+        //then check for any black moves that can take this piece
+        //we can do this by sending the move to black tradeoff, and it will tell if it is a good move
+        rating += blacktradeoff(tempdata, startx, starty, endx, endy);
         
         return rating;
         
@@ -826,7 +911,7 @@ public class Checkers {
     
     
     //rates the advantage of leaving a square, if any
-    public static int ratedeparture(int[][] data, int xpos, int ypos, String move) {
+    public static int ratedeparture(int[][] data, int xpos, int ypos) {
         
         //make a rating
         int rating = 0;
@@ -890,7 +975,9 @@ public class Checkers {
                 
                 //get the rating
                 int temprating = 10;  //starts at 10 because black can take the piece
-                temprating += whitetradeoff(tempdata, xpos - 1, ypos + 1, xpos + 1, ypos - 1);
+                //minus because if the tradeoff is good enough, it might be better to not move
+                //so 10 for moving, minus how much the tradeoff is worth
+                temprating -= whitetradeoff(tempdata, xpos - 1, ypos + 1, xpos + 1, ypos - 1);
                 
                 if (temprating > secondrating) {  //if it's better set it to the better one
                     secondrating = temprating;
@@ -909,7 +996,7 @@ public class Checkers {
                 
                 //get the rating
                 int temprating = 10;  //starts at 10 because black can take the piece
-                temprating += whitetradeoff(tempdata, xpos + 1, ypos + 1, xpos - 1, ypos - 1);
+                temprating -= whitetradeoff(tempdata, xpos + 1, ypos + 1, xpos - 1, ypos - 1);
                 
                 if (temprating > secondrating) {  //if it's better set it to the better one
                     secondrating = temprating;
@@ -928,7 +1015,7 @@ public class Checkers {
                 
                 //get the rating
                 int temprating = 10;  //starts at 10 because black can take the piece
-                temprating += whitetradeoff(tempdata, xpos - 1, ypos - 1, xpos + 1, ypos + 1);
+                temprating -= whitetradeoff(tempdata, xpos - 1, ypos - 1, xpos + 1, ypos + 1);
                 
                 if (temprating > secondrating) {  //if it's better set it to the better one
                     secondrating = temprating;
@@ -947,7 +1034,7 @@ public class Checkers {
                 
                 //get the rating
                 int temprating = 10;  //starts at 10 because black can take the piece
-                temprating += whitetradeoff(tempdata, xpos + 1, ypos - 1, xpos - 1, ypos + 1);
+                temprating -= whitetradeoff(tempdata, xpos + 1, ypos - 1, xpos - 1, ypos + 1);
                 
                 if (temprating > secondrating) {  //if it's better set it to the better one
                     secondrating = temprating;
@@ -3000,7 +3087,7 @@ public class Checkers {
         //check bottom right
         if (x < 6 && y < 6) {
             
-            if ((data[x - 1][y + 1] == 2 || data[x - 1][y + 1] == 4) && data[x - 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
+            if ((data[x + 1][y + 1] == 2 || data[x + 1][y + 1] == 4) && data[x + 2][y + 2] == 9) {  //if there is a piece to be taken and it ends in the destination
                 
                 founddest = true;
                 
@@ -3254,22 +3341,5 @@ public class Checkers {
         
         return data;
     }
-    
-    
-    
-    //prints the database to the console in a readable way
-    public static void printdata(int[][] data) {
-        
-        for (int y = 0; y < 8; y++){
-            System.out.print(data[0][y]);
-            System.out.print(data[1][y]);
-            System.out.print(data[2][y]);
-            System.out.print(data[3][y]);
-            System.out.print(data[4][y]);
-            System.out.print(data[5][y]);
-            System.out.print(data[6][y]);
-            System.out.println(data[7][y]);
-        }
-        
-    }
+
 }
